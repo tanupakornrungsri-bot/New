@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>นักเสี่ยงโชค พิชิตความน่าจะเป็น - เกมการเรียนรู้คณิตศาสตร์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: #f4efe6;
+            color: #332d27;
+        }
+
+        .wood-bg {
+            background-color: #e5d3b3;
+            background-image: radial-gradient(#d1b894 1.2px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+        }
+
+        .gold-glow {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        /* 3D Dice Styling */
+        .scene {
+            width: 110px;
+            height: 110px;
+            perspective: 600px;
+            margin: 0 auto;
+        }
+
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.4s cubic-bezier(0.15, 0.85, 0.35, 1.2);
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            background: #ffffff;
+            border: 3px solid #2d2319;
+            border-radius: 18px;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 12px;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .face-1 { transform: rotateY(0deg) translateZ(55px); }
+        .face-6 { transform: rotateY(180deg) translateZ(55px); }
+        .face-2 { transform: rotateY(-90deg) translateZ(55px); }
+        .face-5 { transform: rotateY(90deg) translateZ(55px); }
+        .face-3 { transform: rotateX(90deg) translateZ(55px); }
+        .face-4 { transform: rotateX(-90deg) translateZ(55px); }
+
+        .pip {
+            display: block;
+            background-color: #232323;
+            border-radius: 50%;
+            margin: auto;
+            width: 18px;
+            height: 18px;
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.4);
+        }
+        .pip-red {
+            background-color: #ef4444;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Token Coin Styling */
+        .token-coin {
+            background: linear-gradient(135deg, #ffe066 0%, #f59e0b 100%);
+            border: 2px solid #b45309;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 2px 2px rgba(255,255,255,0.8);
+        }
+
+        /* Board track steps */
+        .track-step {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .track-step.active {
+            transform: scale(1.2);
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+
+        /* Player Pawn Token */
+        .pawn-token {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Floating Score Text Popup Animation */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-45px) scale(0.9); }
+        }
+        .animate-float-score {
+            animation: floatUp 1.4s ease-out forwards;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Card shine effect */
+        .shine-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .shine-effect::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                60deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 70%
+            );
+            transform: rotate(30deg);
+            transition: all 0.6s;
+            opacity: 0;
+        }
+        .shine-effect:hover::after {
+            animation: shine 1.2s ease-out;
+            opacity: 1;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+    </style>
+</head>
+<body class="wood-bg min-h-screen pb-12 flex flex-col selection:bg-amber-200">
+
+    <header class="bg-white/95 backdrop-blur-md border-b-2 border-amber-300 sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-white flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white">
+                    🎲
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-amber-950 leading-tight tracking-tight flex items-center gap-2">
+                        นักเสี่ยงโชค พิชิตความน่าจะเป็น
+                        <span class="text-xs font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full border border-amber-300">มัธยมศึกษา</span>
+                    </h1>
+                    <p class="text-xs text-amber-700 font-medium">กิจกรรมการเรียนรู้แบบใช้เกมเป็นฐาน (Game-Based Learning)</p>
+                </div>
+            </div>
+
+            <!-- 15-Minute Class Presentation Timer Widget -->
+            <div class="flex items-center gap-2 bg-amber-50/90 border border-amber-300 px-3 py-1.5 rounded-xl shadow-inner">
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] uppercase tracking-wider text-amber-800 font-bold" id="timer-phase-label">ขั้นที่ 1: ขั้นนำ (3 นาที)</span>
+                    <span class="text-lg font-black text-amber-950 font-mono leading-none" id="timer-display">15:00</span>
+                </div>
+                <div class="flex gap-1 ml-1">
+                    <button onclick="toggleTimer()" id="timer-toggle-btn" class="w-7 h-7 bg-amber-500 hover:bg-amber-600 text-white rounded-lg flex items-center justify-center text-xs shadow transition">
+                        <i class="fa-solid fa-play" id="timer-icon"></i>
+                    </button>
+                    <button onclick="resetTimer()" class="w-7 h-7 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg flex items-center justify-center text-xs transition">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex items-center gap-2">
+                <!-- Mode Switcher (Student vs Teacher) -->
+                <button onclick="toggleViewMode()" id="mode-toggle-btn" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-400 shadow-sm">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span id="mode-toggle-label">โหมดนักเรียน</span>
+                </button>
+                <button id="debrief-nav-btn" onclick="toggleDebriefingModal()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-300 shadow-sm hidden">
+                    <i class="fa-solid fa-comments text-amber-600"></i>
+                    <span>คำถามถอดบทเรียน</span>
+                </button>
+                <button onclick="toggleRulesModal()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-blue-200 shadow-sm">
+                    <i class="fa-solid fa-book-open text-blue-600"></i>
+                    <span>กติกาการเล่น</span>
+                </button>
+                <button onclick="toggleSound()" id="sound-btn" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl flex items-center justify-center transition border border-gray-200">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 pt-5 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: Game Dashboard & Arena (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-5">
+
+            <!-- 1. Interactive Board Track -->
+            <div class="bg-white/95 rounded-2xl p-5 border-2 border-amber-300 card-shadow relative overflow-hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-amber-950 flex items-center gap-2 text-base">
+                        <i class="fa-solid fa-map-location-dot text-amber-600"></i>
+                        <span>กระดานการแข่งขัน (รอบที่ <span id="current-round-display" class="text-amber-600 font-extrabold text-lg">1</span> / 5)</span>
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openPodiumModal()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-trophy text-yellow-200"></i>
+                            <span>กระดานผู้นำ</span>
+                        </button>
+                        <span id="game-status-tag" class="text-xs px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-300">
+                            พร้อมแข่งขัน
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animated Board Track -->
+                <div class="relative py-6 px-2">
+                    <div class="absolute top-1/2 left-6 right-6 h-3 bg-amber-100 -translate-y-1/2 rounded-full border border-amber-200 -z-0"></div>
+                    <div id="track-progress-bar" class="absolute top-1/2 left-6 h-3 bg-gradient-to-r from-amber-400 to-amber-600 -translate-y-1/2 rounded-full -z-0 transition-all duration-500" style="width: 0%;"></div>
+
+                    <div class="flex justify-between items-center relative z-10">
+                        <div class="flex flex-col items-center">
+                            <div class="w-11 h-11 rounded-2xl bg-emerald-500 text-white font-black text-xs flex items-center justify-center border-2 border-white shadow-lg ring-2 ring-emerald-300">START</div>
+                            <span class="text-[10px] font-bold text-gray-500 mt-1">เริ่มต้น</span>
+                        </div>
+                        <div id="round-step-1" class="track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-400 font-extrabold text-amber-800 text-sm flex items-center justify-center shadow">1</div>
+                        <div id="round-step-2" class="track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-200 font-extrabold text-gray-400 text-sm flex items-center justify-center shadow">2</div>
+                        <div id="round-step-3" class="track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-200 font-extrabold text-gray-400 text-sm flex items-center justify-center shadow">3</div>
+                        <div id="round-step-4" class="track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-200 font-extrabold text-gray-400 text-sm flex items-center justify-center shadow">4</div>
+                        <div id="round-step-5" class="track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-200 font-extrabold text-gray-400 text-sm flex items-center justify-center shadow">5</div>
+                        <div class="flex flex-col items-center">
+                            <div class="w-11 h-11 rounded-2xl bg-amber-600 text-white font-black text-xs flex items-center justify-center border-2 border-white shadow-lg ring-2 ring-amber-300">FINISH</div>
+                            <span class="text-[10px] font-bold text-gray-500 mt-1">เส้นชัย</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-3 px-2">
+                        <div class="text-xs font-bold text-gray-500">ตำแหน่งปัจจุบันของกลุ่ม:</div>
+                        <div class="flex gap-2" id="pawns-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/95 rounded-2xl p-4 border-2 border-amber-300 card-shadow flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">เลือกกลุ่มผู้เล่น:</label>
+                    <select id="player-select" onchange="switchPlayer(this.value)" class="bg-amber-50 border-2 border-amber-300 font-extrabold text-amber-950 text-sm rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+                        <option value="1">🔴 กลุ่มที่ 1 (สายเสี่ยง A)</option>
+                        <option value="2">🔵 กลุ่มที่ 2 (สายเสี่ยง B)</option>
+                        <option value="3">🟢 กลุ่มที่ 3 (สายเสี่ยง C)</option>
+                        <option value="4">🟡 กลุ่มที่ 4 (สายเสี่ยง D)</option>
+                        <option value="5">🟣 กลุ่มที่ 5 (สายเสี่ยง E)</option>
+                        <option value="6">🟠 กลุ่มที่ 6 (สายเสี่ยง F)</option>
+                        <option value="7">💖 กลุ่มที่ 7 (สายเสี่ยง G)</option>
+                        <option value="8">🟤 กลุ่มที่ 8 (สายเสี่ยง H)</option>
+                        <option value="9">🩵 กลุ่มที่ 9 (สายเสี่ยง I)</option>
+                        <option value="10">🩶 กลุ่มที่ 10 (สายเสี่ยง J)</option>
+                        <option value="11">🖤 กลุ่มที่ 11 (สายเสี่ยง K)</option>
+                        <option value="12">🟩 กลุ่มที่ 12 (สายเสี่ยง L)</option>
+                    </select>
+                </div>
+
+                <div class="relative flex items-center gap-3 bg-gradient-to-r from-amber-50 to-yellow-50 px-5 py-2 rounded-2xl border-2 border-amber-300 shadow-inner">
+                    <div id="score-popup-container" class="absolute -top-3 right-6 pointer-events-none"></div>
+                    <div class="w-9 h-9 rounded-full token-coin flex items-center justify-center text-amber-900 font-bold text-base shadow">
+                        🪙
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-amber-800 uppercase tracking-wider leading-none">คะแนนเหรียญสะสม</div>
+                        <div class="text-2xl font-black text-amber-950 leading-tight">
+                            <span id="player-score">10</span> <span class="text-xs font-bold text-amber-700">เหรียญ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EVENT CARDS: Hidden Explicit Probability/Set Values to let students calculate -->
+            <div class="bg-white/95 rounded-2xl p-5 border-2 border-amber-300 card-shadow">
+                <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                    <h2 class="font-bold text-amber-950 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-clone text-amber-600"></i>
+                        <span>ขั้นตอนที่ 1: เลือกบัตรเหตุการณ์เพื่อวัดดวง</span>
+                    </h2>
+                    <span class="text-[11px] text-amber-800 font-bold bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                        ⚡ หากทอยไม่สำเร็จ จะเสีย 1 เหรียญ
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Card A -->
+                    <div onclick="selectCard('A')" id="card-A" class="event-card shine-effect cursor-pointer bg-purple-50 hover:bg-purple-100 border-2 border-purple-300 rounded-2xl p-3 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative min-h-[140px] justify-between">
+                        <span class="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 bg-purple-200 text-purple-800 rounded-md">บัตร A</span>
+                        <span class="w-8 h-8 rounded-xl bg-purple-600 text-white font-extrabold text-sm flex items-center justify-center my-1 shadow">A</span>
+                        <h3 class="text-xs font-extrabold text-purple-950 mb-1">ทอยได้เลขคู่</h3>
+                        <div id="card-A-prob" class="text-[11px] font-bold text-purple-700 my-1 bg-purple-100/80 px-2 py-0.5 rounded-md">P(E) = ?</div>
+                        <div class="mt-1 text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-sm">+2 คะแนน</div>
+                    </div>
+
+                    <!-- Card B -->
+                    <div onclick="selectCard('B')" id="card-B" class="event-card shine-effect cursor-pointer bg-blue-50 hover:bg-blue-100 border-2 border-blue-300 rounded-2xl p-3 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative min-h-[140px] justify-between">
+                        <span class="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded-md">บัตร B</span>
+                        <span class="w-8 h-8 rounded-xl bg-blue-600 text-white font-extrabold text-sm flex items-center justify-center my-1 shadow">B</span>
+                        <h3 class="text-xs font-extrabold text-blue-950 mb-1">มากกว่า 4</h3>
+                        <div id="card-B-prob" class="text-[11px] font-bold text-blue-700 my-1 bg-blue-100/80 px-2 py-0.5 rounded-md">P(E) = ?</div>
+                        <div class="mt-1 text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-sm">+3 คะแนน</div>
+                    </div>
+
+                    <!-- Card C -->
+                    <div onclick="selectCard('C')" id="card-C" class="event-card shine-effect cursor-pointer bg-rose-50 hover:bg-rose-100 border-2 border-rose-300 rounded-2xl p-3 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative min-h-[140px] justify-between">
+                        <span class="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 bg-rose-200 text-rose-800 rounded-md">บัตร C</span>
+                        <span class="w-8 h-8 rounded-xl bg-rose-600 text-white font-extrabold text-sm flex items-center justify-center my-1 shadow">C</span>
+                        <h3 class="text-xs font-extrabold text-rose-950 mb-1">ทอยได้เลข 6</h3>
+                        <div id="card-C-prob" class="text-[11px] font-bold text-rose-700 my-1 bg-rose-100/80 px-2 py-0.5 rounded-md">P(E) = ?</div>
+                        <div class="mt-1 text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-sm">+6 คะแนน</div>
+                    </div>
+
+                    <!-- Card D -->
+                    <div onclick="selectCard('D')" id="card-D" class="event-card shine-effect cursor-pointer bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 rounded-2xl p-3 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative min-h-[140px] justify-between">
+                        <span class="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 bg-emerald-200 text-emerald-800 rounded-md">บัตร D</span>
+                        <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-extrabold text-sm flex items-center justify-center my-1 shadow">D</span>
+                        <h3 class="text-xs font-extrabold text-emerald-950 mb-1">น้อยกว่า 5</h3>
+                        <div id="card-D-prob" class="text-[11px] font-bold text-emerald-700 my-1 bg-emerald-100/80 px-2 py-0.5 rounded-md">P(E) = ?</div>
+                        <div class="mt-1 text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-sm">+1 คะแนน</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/95 rounded-2xl p-6 border-2 border-amber-300 card-shadow flex flex-col items-center text-center relative overflow-hidden">
+                <h2 class="font-extrabold text-amber-950 text-sm mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-amber-600"></i>
+                    <span>ขั้นตอนที่ 2: วิเคราะห์คณิตศาสตร์แล้วทอยลูกเต๋า</span>
+                </h2>
+
+                <div id="math-breakdown" class="w-full bg-amber-50/90 rounded-2xl p-3.5 border-2 border-amber-200 mb-5 text-xs text-amber-950 transition-all">
+                    <p class="text-gray-500 font-medium">กรุณาคลิกเลือกบัตรเหตุการณ์ด้านบน เพื่อวิเคราะห์ P(E) = n(E) / n(S)</p>
+                </div>
+
+                <!-- 3D Dice Cube Container -->
+                <div class="scene my-3">
+                    <div id="dice-cube" class="dice">
+                        <div class="dice-face face-1">
+                            <div></div><div></div><div></div>
+                            <div></div><span class="pip pip-red"></span><div></div>
+                            <div></div><div></div><div></div>
+                        </div>
+                        <div class="dice-face face-2">
+                            <span class="pip"></span><div></div><div></div>
+                            <div></div><div></div><div></div>
+                            <div></div><div></div><span class="pip"></span>
+                        </div>
+                        <div class="dice-face face-3">
+                            <span class="pip"></span><div></div><div></div>
+                            <div></div><span class="pip"></span><div></div>
+                            <div></div><div></div><span class="pip"></span>
+                        </div>
+                        <div class="dice-face face-4">
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                            <div></div><div></div><div></div>
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                        </div>
+                        <div class="dice-face face-5">
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                            <div></div><span class="pip"></span><div></div>
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                        </div>
+                        <div class="dice-face face-6">
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                            <span class="pip"></span><div></div><span class="pip"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="mt-4 flex flex-wrap gap-3 justify-center">
+                    <button id="math-quiz-btn" disabled onclick="openMathQuizModal()" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-brain"></i>
+                        <span id="quiz-btn-text">ตอบคำถามคณิต (+1 เหรียญ)</span>
+                    </button>
+
+                    <button id="roll-btn" disabled onclick="rollDice()" class="px-8 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 flex items-center gap-2 text-base">
+                        <i class="fa-solid fa-dice text-2xl animate-bounce"></i>
+                        <span>ทอยลูกเต๋าเลย!</span>
+                    </button>
+
+                    <button onclick="resetCurrentGame()" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition text-xs border border-gray-300">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> เริ่มใหม่
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Worksheet & Live Stats (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+
+            <div class="bg-white/95 rounded-2xl p-5 border-2 border-amber-300 card-shadow flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-amber-950 flex items-center gap-2 text-base">
+                        <i class="fa-solid fa-table-list text-amber-600"></i>
+                        <span>ตารางบันทึกผลประจำกลุ่ม</span>
+                    </h2>
+                    <button onclick="clearWorksheet()" class="text-xs text-rose-600 hover:underline font-bold">
+                        ล้างข้อมูลกลุ่มนี้
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar flex-1 border-2 border-amber-100 rounded-xl">
+                    <table class="w-full text-xs text-left text-gray-800">
+                        <thead class="text-[11px] text-amber-950 uppercase bg-amber-100/80 border-b border-amber-200 font-extrabold">
+                            <tr>
+                                <th class="px-2 py-2 text-center">รอบ</th>
+                                <th class="px-2 py-2">บัตร</th>
+                                <th class="px-2 py-2 text-center">P(E)</th>
+                                <th class="px-2 py-2 text-center">ผลทอย</th>
+                                <th class="px-2 py-2 text-center">ได้/เสีย</th>
+                                <th class="px-2 py-2 text-center">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="worksheet-table-body">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Win Rate Bar -->
+                <div class="mt-4 p-3.5 bg-amber-50/80 rounded-xl border border-amber-200">
+                    <div class="text-xs font-bold text-amber-950 mb-2 flex justify-between items-center">
+                        <span>📊 อัตราการชนะจริงเทียบทฤษฎี:</span>
+                        <span id="win-rate-stat" class="font-extrabold text-amber-700">0%</span>
+                    </div>
+                    <div class="w-full bg-amber-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="win-rate-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Export Button -->
+                <div class="mt-4 flex gap-2">
+                    <button onclick="exportWorksheet()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-file-lines"></i> ดูใบบันทึกผลดิจิทัล (Digital Sheet)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: Math Quiz Modal -->
+    <div id="quiz-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-amber-300">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-3">
+                <h3 class="text-base font-extrabold text-amber-950 flex items-center gap-2">
+                    <i class="fa-solid fa-brain text-purple-600"></i>
+                    คำถามคณิตศาสตร์โบนัส (+1 เหรียญ)
+                </h3>
+                <button onclick="toggleQuizModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="quiz-modal-body" class="space-y-4">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Game Rules Modal -->
+    <div id="rules-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border-2 border-amber-300 my-auto">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
+                <h3 class="text-base font-extrabold text-amber-950 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-blue-600"></i>
+                    กติกาและกลไกการเล่นเกม
+                </h3>
+                <button onclick="toggleRulesModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs text-gray-700 leading-relaxed">
+                <p class="font-bold text-amber-900">🎯 วัตถุประสงค์:</p>
+                <p>คำนวณและวิเคราะห์ความน่าจะเป็น P(E) = n(E)/n(S) เพื่อวางแผนเลือกบัตรเหตุการณ์ที่คุ้มค่าที่สุดสะสมเหรียญให้ได้มากที่สุดใน 5 รอบ</p>
+                <p class="font-bold text-amber-900">🎲 ขั้นตอนการเล่นแต่ละรอบ:</p>
+                <ol class="list-decimal list-inside space-y-1 pl-1">
+                    <li>กลุ่มผู้เล่นได้รับเงินทุนเริ่มต้น 10 เหรียญเท่ากัน</li>
+                    <li>เลือกบัตรเหตุการณ์ A, B, C หรือ D แล้วให้นักเรียนคำนวณหา n(E) และ P(E) ด้วยตนเอง</li>
+                    <li>(ทางเลือกโบนัส) ตอบคำถามคณิตศาสตร์เพื่อรับคะแนนพิเศษ +1 เหรียญ (ตอบได้สูงสุด 2 ครั้งต่อรอบ)</li>
+                    <li>กดปุ่มทอยลูกเต๋า หากแต้มลูกเต๋าตรงตามบัตร จะได้รับเหรียญรางวัลตามบัตร หากไม่ตรงจะเสีย 1 เหรียญ</li>
+                    <li>เล่นสะสมคะแนนจนครบ 5 รอบ กลุ่มที่มีเหรียญสูงสุดเป็นผู้ชนะ</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Leaderboard Podium Modal -->
+    <div id="podium-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-amber-300 text-center">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
+                <h3 class="text-base font-extrabold text-amber-950 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                    กระดานผู้นำและอันดับคะแนน
+                </h3>
+                <button onclick="togglePodiumModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="podium-bars-container" class="h-44 flex justify-center items-end gap-4 my-4">
+                <!-- Dynamic Podium Bars -->
+            </div>
+            <div id="podium-list" class="space-y-2 text-xs text-left max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                <!-- Dynamic List -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Teacher Debriefing Questions -->
+    <div id="debrief-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-2 border-amber-300 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
+                <h3 class="text-base font-extrabold text-amber-950 flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-amber-500"></i>
+                    ช่วงถอดบทเรียน (Debriefing) สำหรับครูผู้สอน (3 นาที)
+                </h3>
+                <button onclick="toggleDebriefingModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs text-gray-700">
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="font-bold text-amber-900 mb-1">1. ปริภูมิของตัวอย่าง S ในการทอยลูกเต๋า 1 ลูกคืออะไร?</p>
+                    <p class="text-gray-600">แนวคำตอบ: S = {1, 2, 3, 4, 5, 6} มีจำนวนสมาชิก n(S) = 6</p>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="font-bold text-amber-900 mb-1">2. บัตรเหตุการณ์ใดมีความน่าจะเป็นสูงที่สุด และเพราะเหตุใด?</p>
+                    <p class="text-gray-600">แนวคำตอบ: บัตร D (น้อยกว่า 5) P(E) = 4/6 = 66.7% เพราะมีผลลัพธ์ในเหตุการณ์มากที่สุด (4 ตัว)</p>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="font-bold text-amber-900 mb-1">3. บัตรที่ได้คะแนนมากที่สุด มีความน่าจะเป็นสูงหรือต่ำ?</p>
+                    <p class="text-gray-600">แนวคำตอบ: บัตร C ได้ +6 คะแนน แต่มีความน่าจะเป็นต่ำเพียง 1/6 (16.7%) ชี้ให้เห็นถึงหลักการ "ความเสี่ยงสูง ผลตอบแทนสูง"</p>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="font-bold text-amber-900 mb-1">4. ผลการทอยจริงตรงกับความน่าจะเป็นทางทฤษฎีเสมอหรือไม่?</p>
+                    <p class="text-gray-600">แนวคำตอบ: ไม่จำเป็นต้องตรงเสมอไป เพราะความน่าจะเป็นคือการบอกแนวโน้มระยะยาว ไม่ใช่การรับประกันผลในการทดลองครั้งเดียว</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Digital Worksheet Modal -->
+    <div id="digital-worksheet-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border-4 border-amber-300 relative my-auto">
+            <div class="flex flex-wrap justify-between items-center pb-3 border-b border-gray-200 mb-4 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📄</span>
+                    <div>
+                        <h3 class="text-base font-black text-amber-950 leading-tight">ใบบันทึกผลกิจกรรมดิจิทัล (Digital Worksheet)</h3>
+                        <p class="text-[11px] text-amber-700 font-medium">แผ่นสรุปผลการเรียนรู้สำหรับแคปภาพหรือนำเสนอผลงาน</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-gray-600">เลือกกลุ่ม:</label>
+                    <select id="worksheet-group-select" onchange="renderDigitalWorksheet(this.value)" class="text-xs bg-amber-50 border-2 border-amber-300 font-bold px-3 py-1 rounded-xl outline-none cursor-pointer text-amber-950">
+                        <option value="1">🔴 กลุ่มที่ 1</option>
+                        <option value="2">🔵 กลุ่มที่ 2</option>
+                        <option value="3">🟢 กลุ่มที่ 3</option>
+                        <option value="4">🟡 กลุ่มที่ 4</option>
+                        <option value="5">🟣 กลุ่มที่ 5</option>
+                        <option value="6">🟠 กลุ่มที่ 6</option>
+                        <option value="7">💖 กลุ่มที่ 7</option>
+                        <option value="8">🟤 กลุ่มที่ 8</option>
+                        <option value="9">🩵 กลุ่มที่ 9</option>
+                        <option value="10">🩶 กลุ่มที่ 10</option>
+                        <option value="11">🖤 กลุ่มที่ 11</option>
+                        <option value="12">🟩 กลุ่มที่ 12</option>
+                    </select>
+                    <button onclick="toggleDigitalWorksheetModal()" class="text-gray-400 hover:text-gray-600 p-1 ml-2">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Digital Sheet Rendering Area -->
+            <div id="digital-sheet-paper" class="bg-amber-50/60 p-5 rounded-2xl border-2 border-amber-200 text-gray-800 text-xs shadow-inner space-y-4">
+                <!-- Dynamic Content injected via JavaScript -->
+            </div>
+
+            <div class="mt-4 flex flex-wrap justify-between items-center gap-2 text-xs">
+                <span class="text-gray-500 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-camera text-amber-600"></i> สามารถแคปหน้าจอ (Screenshot) เพื่อบันทึกเป็นไฟล์ภาพได้ทันที
+                </span>
+                <button onclick="toggleDigitalWorksheetModal()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM ALERT MODAL -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-amber-300 text-center">
+            <h3 class="text-base font-black text-amber-950 mb-2" id="custom-alert-title">แจ้งเตือน</h3>
+            <p class="text-xs text-gray-700 whitespace-pre-line mb-5 leading-relaxed" id="custom-alert-msg"></p>
+            <button onclick="closeAlertModal()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRM MODAL -->
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-amber-300 text-center">
+            <h3 class="text-base font-black text-amber-950 mb-2" id="custom-confirm-title">ยืนยัน</h3>
+            <p class="text-xs text-gray-700 whitespace-pre-line mb-5 leading-relaxed" id="custom-confirm-msg"></p>
+            <div class="flex gap-2">
+                <button onclick="handleConfirmNo()" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition border border-gray-300">
+                    ยกเลิก
+                </button>
+                <button onclick="handleConfirmYes()" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition">
+                    ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CARDS_DATA = {
+            'A': { title: 'ทอยได้เลขคู่', outcomes: [2, 4, 6], reward: 2, probStr: '3/6 = 1/2', probVal: 0.5, setStr: '{2, 4, 6}', nE: 3 },
+            'B': { title: 'ทอยได้เลขมากกว่า 4', outcomes: [5, 6], reward: 3, probStr: '2/6 = 1/3', probVal: 0.333, setStr: '{5, 6}', nE: 2 },
+            'C': { title: 'ทอยได้เลข 6', outcomes: [6], reward: 6, probStr: '1/6', probVal: 0.167, setStr: '{6}', nE: 1 },
+            'D': { title: 'ทอยได้เลขน้อยกว่า 5', outcomes: [1, 2, 3, 4], reward: 1, probStr: '4/6 = 2/3', probVal: 0.667, setStr: '{1, 2, 3, 4}', nE: 4 }
+        };
+
+        const QUIZ_BANK = [
+            {
+                id: 1,
+                question: '1. ในการทอยลูกเต๋า 1 ลูก ปริภูมิของตัวอย่าง n(S) มีจำนวนสมาชิกกี่แบบ?',
+                options: ['4 แบบ', '6 แบบ', '8 แบบ', '12 แบบ'],
+                correctIndex: 1,
+                explanation: 'ปริภูมิของตัวอย่าง S = {1, 2, 3, 4, 5, 6} ดังนั้น n(S) = 6'
+            },
+            {
+                id: 2,
+                question: '2. เหตุการณ์ที่ทอยได้แต้มมากกว่า 2 มีจำนวนสมาชิก n(E) เท่าใด?',
+                options: ['2 ตัว', '3 ตัว', '4 ตัว', '5 ตัว'],
+                correctIndex: 2,
+                explanation: 'E = {3, 4, 5, 6} ดังนั้น n(E) = 4'
+            },
+            {
+                id: 3,
+                question: '3. ความน่าจะเป็นที่จะทอยได้แต้มคี่ จากการทอยลูกเต๋า 1 ลูก เท่ากับเท่าใด?',
+                options: ['1/6', '1/3', '1/2', '2/3'],
+                correctIndex: 2,
+                explanation: 'แต้มคี่ E = {1, 3, 5} ดังนั้น n(E) = 3, P(E) = 3/6 = 1/2'
+            },
+            {
+                id: 4,
+                question: '4. ถ้าทอยลูกเต๋า 1 ลูก เหตุการณ์ที่จะทอยได้แต้มมากกว่า 6 มีค่าความน่าจะเป็นเท่าใด?',
+                options: ['0', '1/6', '1/2', '1'],
+                correctIndex: 0,
+                explanation: 'ไม่มีแต้มที่มากกว่า 6 บนลูกเต๋าปกติ E = {} ดังนั้น n(E) = 0 ทำให้ P(E) = 0'
+            },
+            {
+                id: 5,
+                question: '5. ถ้าทอยลูกเต๋า 1 ลูก ความน่าจะเป็นที่จะได้แต้มที่เป็นจำนวนเฉพาะ เท่ากับเท่าใด?',
+                options: ['1/6', '2/6', '3/6 = 1/2', '4/6 = 2/3'],
+                correctIndex: 2,
+                explanation: 'จำนวนเฉพาะบนลูกเต๋าคือ {2, 3, 5} มี 3 ตัว ดังนั้น P(E) = 3/6 = 1/2'
+            },
+            {
+                id: 6,
+                question: '6. ในทางคณิตศาสตร์ สัญลักษณ์ n(S) หมายถึงข้อใด?',
+                options: ['จำนวนสมาชิกของเหตุการณ์', 'จำนวนสมาชิกของปริภูมิของตัวอย่าง', 'ค่าความน่าจะเป็นสุทธิ', 'จำนวนรอบที่เล่น'],
+                correctIndex: 1,
+                explanation: 'n(S) ย่อมาจาก Number of Sample Space หรือจำนวนสมาชิกผลลัพธ์ทั้งหมดที่เป็นไปได้'
+            },
+            {
+                id: 7,
+                question: '7. ถ้าความน่าจะเป็นของเหตุการณ์ P(E) = 1 หมายความว่าอย่างไร?',
+                options: ['เหตุการณ์นั้นไม่มีทางเกิดขึ้น', 'เหตุการณ์นั้นเกิดขึ้นอย่างแน่นอน', 'เหตุการณ์นั้นมีโอกาสเกิด 50%', 'คำนวณค่าไม่ได้'],
+                correctIndex: 1,
+                explanation: 'P(E) = 1 หมายถึงเหตุการณ์นั้นเกิดขึ้นแน่นอน 100%'
+            },
+            {
+                id: 8,
+                question: '8. สูตรการคำนวณหาความน่าจะเป็นของเหตุการณ์ P(E) คือข้อใด?',
+                options: ['P(E) = n(S) / n(E)', 'P(E) = n(E) / n(S)', 'P(E) = n(E) x n(S)', 'P(E) = n(E) + n(S)'],
+                correctIndex: 1,
+                explanation: 'ความน่าจะเป็น P(E) คำนวณจาก จำนวนสมาชิกของเหตุการณ์ n(E) หารด้วย จำนวนสมาชิกของปริภูมิของตัวอย่าง n(S)'
+            },
+            {
+                id: 9,
+                question: '9. ในการทอยลูกเต๋า 1 ลูก เหตุการณ์ที่ได้แต้มหารด้วย 3 ลงตัว คือเซตในข้อใด?',
+                options: ['{3, 6}', '{3}', '{1, 3, 6}', '{3, 4, 5, 6}'],
+                correctIndex: 0,
+                explanation: 'แต้มที่ 3 หารลงตัวบนลูกเต๋าคือ 3 และ 6 ดังนั้น E = {3, 6}'
+            },
+            {
+                id: 10,
+                question: '10. ทอยลูกเต๋า 1 ลูก ความน่าจะเป็นที่จะได้แต้มไม่เกิน 4 เท่ากับเท่าใด?',
+                options: ['1/6', '2/6 = 1/3', '4/6 = 2/3', '5/6'],
+                correctIndex: 2,
+                explanation: 'แต้มไม่เกิน 4 คือ E = {1, 2, 3, 4} มี n(E) = 4 ดังนั้น P(E) = 4/6 = 2/3'
+            },
+            {
+                id: 11,
+                question: '11. ข้อใดคือสมาชิกของเหตุการณ์ "ทอยได้แต้มคู่"?',
+                options: ['{1, 3, 5}', '{2, 4, 6}', '{2, 3, 5}', '{1, 2, 4}'],
+                correctIndex: 1,
+                explanation: 'แต้มคู่บนลูกเต๋าคือ 2, 4, 6 ดังนั้น E = {2, 4, 6}'
+            },
+            {
+                id: 12,
+                question: '12. ค่าความน่าจะเป็นของเหตุการณ์ใดๆ จะมีค่าอยู่ในช่วงใดเสมอ?',
+                options: ['ตั้งแต่ -1 ถึง 1', 'ตั้งแต่ 0 ถึง 1', 'ตั้งแต่ 0 ถึง 100', 'มากกว่า 1 ขึ้นไป'],
+                correctIndex: 1,
+                explanation: 'ค่าความน่าจะเป็น P(E) จะมีค่าตั้งแต่ 0 (ไม่เกิดแน่นอน) ถึง 1 (เกิดขึ้นแน่นอน) เสมอ'
+            }
+        ];
+
+        const GROUP_COLORS = {
+            1: { name: 'กลุ่มที่ 1', color: '#ef4444', bg: 'bg-red-500', icon: '🔴' },
+            2: { name: 'กลุ่มที่ 2', color: '#3b82f6', bg: 'bg-blue-500', icon: '🔵' },
+            3: { name: 'กลุ่มที่ 3', color: '#10b981', bg: 'bg-emerald-500', icon: '🟢' },
+            4: { name: 'กลุ่มที่ 4', color: '#eab308', bg: 'bg-yellow-500', icon: '🟡' },
+            5: { name: 'กลุ่มที่ 5', color: '#a855f7', bg: 'bg-purple-500', icon: '🟣' },
+            6: { name: 'กลุ่มที่ 6', color: '#f97316', bg: 'bg-orange-500', icon: '🟠' },
+            7: { name: 'กลุ่มที่ 7', color: '#ec4899', bg: 'bg-pink-500', icon: '💖' },
+            8: { name: 'กลุ่มที่ 8', color: '#854d0e', bg: 'bg-amber-800', icon: '🟤' },
+            9: { name: 'กลุ่มที่ 9', color: '#06b6d4', bg: 'bg-cyan-500', icon: '🩵' },
+            10: { name: 'กลุ่มที่ 10', color: '#6b7280', bg: 'bg-gray-500', icon: '🩶' },
+            11: { name: 'กลุ่มที่ 11', color: '#1f2937', bg: 'bg-gray-800', icon: '🖤' },
+            12: { name: 'กลุ่มที่ 12', color: '#84cc16', bg: 'bg-lime-500', icon: '🟩' }
+        };
+
+        const createInitialPlayers = () => {
+            const players = {};
+            for (let i = 1; i <= 12; i++) {
+                players[i] = { score: 10, round: 1, history: [], usedQuizIds: [], quizCountInRound: 0 };
+            }
+            return players;
+        };
+
+        let gameState = {
+            viewMode: 'student', // 'student' or 'teacher'
+            showTeacherAnswer: true, // Toggle teacher answers in teacher mode
+            currentPlayer: 1,
+            players: createInitialPlayers(),
+            selectedCardKey: null,
+            activeQuiz: null,
+            isRolling: false,
+            soundEnabled: true,
+            timerSeconds: 15 * 60,
+            timerRunning: false,
+            timerInterval: null
+        };
+
+        let confirmCallback = null;
+
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'roll') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                } else if (type === 'lose') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'bonus') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                }
+            } catch(e) {
+                console.log("Audio not allowed", e);
+            }
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            if (btn) {
+                btn.innerHTML = gameState.soundEnabled ? 
+                    '<i class="fa-solid fa-volume-high"></i>' : 
+                    '<i class="fa-solid fa-volume-xmark text-rose-500"></i>';
+            }
+        }
+
+        function showAlert(title, msg) {
+            document.getElementById('custom-alert-title').innerText = title;
+            document.getElementById('custom-alert-msg').innerText = msg;
+            document.getElementById('custom-alert-modal').classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('custom-alert-modal').classList.add('hidden');
+        }
+
+        function showConfirm(title, msg, onYes) {
+            document.getElementById('custom-confirm-title').innerText = title;
+            document.getElementById('custom-confirm-msg').innerText = msg;
+            confirmCallback = onYes;
+            document.getElementById('custom-confirm-modal').classList.remove('hidden');
+        }
+
+        function handleConfirmYes() {
+            document.getElementById('custom-confirm-modal').classList.add('hidden');
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            confirmCallback = null;
+        }
+
+        function handleConfirmNo() {
+            document.getElementById('custom-confirm-modal').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        function toggleTimer() {
+            if (gameState.timerRunning) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerRunning = false;
+                document.getElementById('timer-icon').className = 'fa-solid fa-play';
+            } else {
+                gameState.timerRunning = true;
+                document.getElementById('timer-icon').className = 'fa-solid fa-pause';
+                gameState.timerInterval = setInterval(() => {
+                    if (gameState.timerSeconds > 0) {
+                        gameState.timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(gameState.timerInterval);
+                        gameState.timerRunning = false;
+                        document.getElementById('timer-icon').className = 'fa-solid fa-play';
+                        playSound('bonus');
+                        showAlert('หมดเวลาการนำเสนอ', 'การนำเสนอ 15 นาทีสิ้นสุดลงแล้วครับ');
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(gameState.timerInterval);
+            gameState.timerRunning = false;
+            gameState.timerSeconds = 15 * 60;
+            document.getElementById('timer-icon').className = 'fa-solid fa-play';
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(gameState.timerSeconds / 60);
+            const s = gameState.timerSeconds % 60;
+            const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            const el = document.getElementById('timer-display');
+            if (el) el.innerText = display;
+
+            const labelEl = document.getElementById('timer-phase-label');
+            if (labelEl) {
+                if (gameState.timerSeconds > 12 * 60) {
+                    labelEl.innerText = "ขั้นที่ 1: ขั้นนำ (3 นาที)";
+                } else if (gameState.timerSeconds > 3 * 60) {
+                    labelEl.innerText = "ขั้นที่ 2: ขั้นสอน/เกม (9 นาที)";
+                } else {
+                    labelEl.innerText = "ขั้นที่ 3: ขั้นสรุป (3 นาที)";
+                }
+            }
+        }
+
+        function toggleViewMode() {
+            gameState.viewMode = gameState.viewMode === 'student' ? 'teacher' : 'student';
+            const btn = document.getElementById('mode-toggle-btn');
+            const label = document.getElementById('mode-toggle-label');
+            const debriefBtn = document.getElementById('debrief-nav-btn');
+
+            if (gameState.viewMode === 'teacher') {
+                btn.className = "px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-purple-400 shadow-sm";
+                label.innerText = "โหมดครูผู้สอน (แสดงเฉลย)";
+                if (debriefBtn) debriefBtn.classList.remove('hidden');
+
+                document.getElementById('card-A-prob').innerText = "P(E) = 1/2";
+                document.getElementById('card-B-prob').innerText = "P(E) = 1/3";
+                document.getElementById('card-C-prob').innerText = "P(E) = 1/6";
+                document.getElementById('card-D-prob').innerText = "P(E) = 2/3";
+            } else {
+                btn.className = "px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-400 shadow-sm";
+                label.innerText = "โหมดนักเรียน";
+                if (debriefBtn) debriefBtn.classList.add('hidden');
+
+                document.getElementById('card-A-prob').innerText = "P(E) = ?";
+                document.getElementById('card-B-prob').innerText = "P(E) = ?";
+                document.getElementById('card-C-prob').innerText = "P(E) = ?";
+                document.getElementById('card-D-prob').innerText = "P(E) = ?";
+            }
+
+            if (gameState.selectedCardKey) {
+                selectCard(gameState.selectedCardKey);
+            }
+            updatePlayerUI();
+        }
+
+        function toggleTeacherAnswer() {
+            gameState.showTeacherAnswer = !gameState.showTeacherAnswer;
+            if (gameState.selectedCardKey) {
+                selectCard(gameState.selectedCardKey);
+            }
+        }
+
+        function selectCard(cardKey) {
+            if (gameState.isRolling) return;
+
+            const playerData = gameState.players[gameState.currentPlayer];
+            if (playerData.round > 5) {
+                showAlert('แจ้งเตือน', 'กลุ่มนี้เล่นครบ 5 รอบเรียบร้อยแล้ว!');
+                return;
+            }
+
+            gameState.selectedCardKey = cardKey;
+
+            document.querySelectorAll('.event-card').forEach(el => {
+                el.classList.remove('ring-4', 'ring-amber-500', 'scale-105', 'gold-glow');
+            });
+            const selectedEl = document.getElementById(`card-${cardKey}`);
+            if (selectedEl) {
+                selectedEl.classList.add('ring-4', 'ring-amber-500', 'scale-105', 'gold-glow');
+            }
+
+            document.getElementById('roll-btn').disabled = false;
+            updateQuizButtonState();
+
+            const card = CARDS_DATA[cardKey];
+            const mathBox = document.getElementById('math-breakdown');
+            
+            if (gameState.viewMode === 'teacher') {
+                mathBox.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 font-bold text-amber-950 border-b border-amber-200 pb-1.5 mb-1.5">
+                        <span>วิเคราะห์เหตุการณ์ (บัตร ${cardKey}): ${card.title}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full font-black">รางวัล +${card.reward} เหรียญ</span>
+                            <button onclick="toggleTeacherAnswer()" class="text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-sm flex items-center gap-1">
+                                <i class="fa-solid ${gameState.showTeacherAnswer ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                                <span>${gameState.showTeacherAnswer ? 'ซ่อนเฉลย' : 'แสดงเฉลยครู'}</span>
+                            </button>
+                        </div>
+                    </div>
+                    ${gameState.showTeacherAnswer ? `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-amber-900 font-medium my-1 bg-purple-50 p-2.5 rounded-xl border border-purple-200">
+                            <div>• ปริภูมิ S = {1, 2, 3, 4, 5, 6} -> n(S) = 6</div>
+                            <div>• เหตุการณ์ E = ${card.setStr} -> n(E) = ${card.nE}</div>
+                            <div class="sm:col-span-2 font-bold text-purple-950 text-xs mt-1">
+                                • ความน่าจะเป็น P(E) = n(E) / n(S) = ${card.probStr} (${(card.probVal * 100).toFixed(1)}%)
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="text-xs text-purple-800 italic my-1 font-semibold">
+                            (ซ่อนเฉลยอยู่ - กดปุ่ม "แสดงเฉลยครู" ด้านบนเพื่อดูเฉลย)
+                        </div>
+                    `}
+                `;
+            } else {
+                mathBox.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 font-bold text-amber-950 border-b border-amber-200 pb-1.5 mb-1.5">
+                        <span>วิเคราะห์เหตุการณ์ (บัตร ${cardKey}): ${card.title}</span>
+                        <span class="text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full font-black">รางวัล +${card.reward} เหรียญ</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-amber-900 font-medium my-1">
+                        <div>• ปริภูมิ S = {1, 2, 3, 4, 5, 6} -> n(S) = 6</div>
+                        <div>• เหตุการณ์ E = ? (ให้นักเรียนคำนวณและระบุสมาชิกในใบบันทึกผล)</div>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-amber-200 font-bold text-amber-950 flex flex-wrap justify-between items-center text-xs">
+                        <span>ให้นักเรียนคำนวณ: n(E) = ? ตัว และ P(E) = n(E) / n(S) = ? / 6</span>
+                        <span class="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-md font-bold">
+                            🎓 โหมดนักเรียน
+                        </span>
+                    </div>
+                `;
+            }
+        }
+
+        function updateQuizButtonState() {
+            const quizBtn = document.getElementById('math-quiz-btn');
+            const quizSpan = document.getElementById('quiz-btn-text');
+            if (!quizBtn) return;
+
+            const playerData = gameState.players[gameState.currentPlayer];
+            const currentCount = playerData.quizCountInRound || 0;
+
+            if (playerData.round > 5) {
+                quizBtn.disabled = true;
+                if (quizSpan) quizSpan.innerText = 'จบการแข่งขันแล้ว';
+                return;
+            }
+
+            if (!gameState.selectedCardKey) {
+                quizBtn.disabled = true;
+                if (quizSpan) quizSpan.innerText = 'เลือกบัตรเพื่อตอบคำถาม (+1 เหรียญ)';
+                return;
+            }
+
+            if (currentCount >= 2) {
+                quizBtn.disabled = true;
+                if (quizSpan) quizSpan.innerText = 'ตอบคำถามโบนัสครบแล้ว (2/2 ครั้ง)';
+            } else {
+                quizBtn.disabled = false;
+                if (quizSpan) quizSpan.innerText = `ตอบคำถามคณิต (+1 เหรียญ) [ทำได้อีก ${2 - currentCount}/2 ครั้ง]`;
+            }
+        }
+
+        function rollDice() {
+            if (gameState.isRolling) return;
+            if (!gameState.selectedCardKey) {
+                showAlert('แจ้งเตือน', 'กรุณาเลือกบัตรเหตุการณ์ก่อนทอยลูกเต๋าครับ!');
+                return;
+            }
+
+            const playerData = gameState.players[gameState.currentPlayer];
+            if (playerData.round > 5) {
+                showAlert('จบการแข่งขันแล้ว', 'กลุ่มนี้เล่นครบ 5 รอบแล้วครับ!');
+                return;
+            }
+
+            gameState.isRolling = true;
+            document.getElementById('roll-btn').disabled = true;
+            document.getElementById('math-quiz-btn').disabled = true;
+
+            playSound('roll');
+
+            const result = Math.floor(Math.random() * 6) + 1;
+
+            let rx = 0, ry = 0;
+            switch(result) {
+                case 1: rx = 0; ry = 0; break;
+                case 2: rx = 0; ry = 90; break;
+                case 3: rx = -90; ry = 0; break;
+                case 4: rx = 90; ry = 0; break;
+                case 5: rx = 0; ry = -90; break;
+                case 6: rx = 0; ry = 180; break;
+            }
+
+            const fullTurns = 1440;
+            const diceCube = document.getElementById('dice-cube');
+            diceCube.style.transform = `rotateX(${rx + fullTurns}deg) rotateY(${ry + fullTurns}deg)`;
+
+            setTimeout(() => {
+                diceCube.style.transition = 'none';
+                diceCube.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+                
+                void diceCube.offsetWidth;
+                diceCube.style.transition = 'transform 1.4s cubic-bezier(0.15, 0.85, 0.35, 1.2)';
+
+                gameState.isRolling = false;
+                processRollResult(result);
+            }, 1450);
+        }
+
+        function showScorePopup(change) {
+            const container = document.getElementById('score-popup-container');
+            if (!container) return;
+            const popup = document.createElement('div');
+            const isPos = change > 0;
+            popup.className = `animate-float-score font-black text-xs px-2.5 py-1 rounded-full border shadow-md ${
+                isPos ? 'bg-emerald-500 text-white border-emerald-300' : 'bg-rose-500 text-white border-rose-300'
+            }`;
+            popup.innerText = isPos ? `+${change} 🪙` : `${change} 🪙`;
+            container.appendChild(popup);
+            setTimeout(() => {
+                popup.remove();
+            }, 1400);
+        }
+
+        function processRollResult(diceResult) {
+            const cardKey = gameState.selectedCardKey;
+            const card = CARDS_DATA[cardKey];
+            const isSuccess = card.outcomes.includes(diceResult);
+            const playerData = gameState.players[gameState.currentPlayer];
+
+            let scoreChange = isSuccess ? card.reward : -1;
+            playerData.score += scoreChange;
+
+            showScorePopup(scoreChange);
+            playSound(isSuccess ? 'win' : 'lose');
+
+            if (isSuccess && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 50,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            playerData.history.push({
+                round: playerData.round,
+                cardKey: cardKey,
+                probStr: card.probStr,
+                diceResult: diceResult,
+                scoreChange: scoreChange,
+                totalScore: playerData.score,
+                isWin: isSuccess
+            });
+
+            playerData.round += 1;
+            playerData.quizCountInRound = 0;
+            gameState.selectedCardKey = null;
+
+            document.querySelectorAll('.event-card').forEach(el => {
+                el.classList.remove('ring-4', 'ring-amber-500', 'scale-105', 'gold-glow');
+            });
+
+            updatePlayerUI();
+            renderWorksheetTable();
+
+            if (playerData.round > 5) {
+                setTimeout(() => {
+                    showAlert('จบการแข่งขัน!', `กลุ่มที่ ${gameState.currentPlayer} เล่นครบ 5 รอบเรียบร้อยแล้ว\nคะแนนรวม: ${playerData.score} เหรียญ`);
+                }, 500);
+            }
+        }
+
+        function openMathQuizModal() {
+            const playerData = gameState.players[gameState.currentPlayer];
+            
+            if ((playerData.quizCountInRound || 0) >= 2) {
+                showAlert('จำกัดสิทธิ์ในแต่ละรอบ', 'ในแต่ละรอบ กลุ่มผู้เล่นสามารถตอบคำถามโบนัสเพื่อรับเหรียญเพิ่มได้สูงสุด 2 ครั้งเท่านั้นครับ!');
+                return;
+            }
+
+            let available = QUIZ_BANK.filter(q => !playerData.usedQuizIds.includes(q.id));
+            
+            if (available.length === 0) {
+                playerData.usedQuizIds = [];
+                available = QUIZ_BANK;
+            }
+
+            const quiz = available[Math.floor(Math.random() * available.length)];
+            gameState.activeQuiz = quiz;
+
+            const body = document.getElementById('quiz-modal-body');
+            body.innerHTML = `
+                <div class="p-3 bg-purple-50 rounded-2xl border border-purple-200">
+                    <p class="font-bold text-purple-950 mb-2 text-sm">${quiz.question}</p>
+                    <div class="grid grid-cols-1 gap-2 mt-3">
+                        ${quiz.options.map((opt, idx) => `
+                            <button onclick="checkQuizAnswer(${idx})" class="w-full text-left px-3 py-2 bg-white hover:bg-purple-100 border-2 border-purple-200 hover:border-purple-400 rounded-xl font-semibold text-purple-900 transition flex items-center justify-between group">
+                                <span>${String.fromCharCode(65 + idx)}. ${opt}</span>
+                                <i class="fa-solid fa-chevron-right text-purple-300 group-hover:text-purple-600 text-xs"></i>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function checkQuizAnswer(selectedIdx) {
+            const quiz = gameState.activeQuiz;
+            if (!quiz) return;
+
+            const playerData = gameState.players[gameState.currentPlayer];
+            playerData.quizCountInRound = (playerData.quizCountInRound || 0) + 1;
+
+            if (!playerData.usedQuizIds.includes(quiz.id)) {
+                playerData.usedQuizIds.push(quiz.id);
+            }
+
+            toggleQuizModal();
+
+            if (selectedIdx === quiz.correctIndex) {
+                playSound('bonus');
+                playerData.score += 1;
+                showScorePopup(1);
+                updatePlayerUI();
+                showAlert('🎉 ถูกต้องครับ!', `คำอธิบาย: ${quiz.explanation}\n\nคุณได้รับโบนัส +1 เหรียญ! (ตอบในรอบนี้แล้ว ${playerData.quizCountInRound}/2 ครั้ง)`);
+            } else {
+                playSound('lose');
+                updatePlayerUI();
+                showAlert('❌ ยังไม่ถูกต้องครับ', `คำอธิบายเฉลย: ${quiz.explanation}\n\n(ตอบในรอบนี้แล้ว ${playerData.quizCountInRound}/2 ครั้ง)`);
+            }
+        }
+
+        function toggleQuizModal() {
+            document.getElementById('quiz-modal').classList.toggle('hidden');
+        }
+
+        function switchPlayer(playerNum) {
+            gameState.currentPlayer = parseInt(playerNum);
+            gameState.selectedCardKey = null;
+
+            document.querySelectorAll('.event-card').forEach(el => {
+                el.classList.remove('ring-4', 'ring-amber-500', 'scale-105', 'gold-glow');
+            });
+            document.getElementById('roll-btn').disabled = true;
+
+            document.getElementById('math-breakdown').innerHTML = `
+                <p class="text-gray-500 font-medium">กรุณาคลิกเลือกบัตรเหตุการณ์ด้านบน เพื่อวิเคราะห์ P(E) = n(E) / n(S)</p>
+            `;
+
+            updatePlayerUI();
+            renderWorksheetTable();
+        }
+
+        function updatePlayerUI() {
+            const playerData = gameState.players[gameState.currentPlayer];
+
+            document.getElementById('player-score').innerText = playerData.score;
+            const currentRound = Math.min(playerData.round, 5);
+            document.getElementById('current-round-display').innerText = playerData.round > 5 ? '5 (เสร็จสิ้น)' : currentRound;
+
+            const statusTag = document.getElementById('game-status-tag');
+            if (playerData.round > 5) {
+                statusTag.innerText = 'จบการแข่งขัน';
+                statusTag.className = 'text-xs px-3 py-1 bg-amber-100 text-amber-900 rounded-full font-bold border border-amber-300';
+            } else {
+                statusTag.innerText = `รอบที่ ${currentRound}`;
+                statusTag.className = 'text-xs px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-300';
+            }
+
+            for (let i = 1; i <= 5; i++) {
+                const stepEl = document.getElementById(`round-step-${i}`);
+                if (i < playerData.round) {
+                    stepEl.className = 'track-step w-10 h-10 rounded-2xl bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center shadow';
+                    stepEl.innerHTML = '✓';
+                } else if (i === playerData.round && playerData.round <= 5) {
+                    stepEl.className = 'track-step active w-10 h-10 rounded-2xl bg-amber-500 text-white font-extrabold text-sm flex items-center justify-center shadow';
+                    stepEl.innerHTML = i;
+                } else {
+                    stepEl.className = 'track-step w-10 h-10 rounded-2xl bg-white border-2 border-amber-200 font-extrabold text-gray-400 text-sm flex items-center justify-center shadow';
+                    stepEl.innerHTML = i;
+                }
+            }
+
+            const percent = Math.min(((playerData.round - 1) / 5) * 100, 100);
+            document.getElementById('track-progress-bar').style.width = `${percent}%`;
+
+            renderPawns();
+            updateWinRateStat();
+            updateQuizButtonState();
+        }
+
+        function renderPawns() {
+            const container = document.getElementById('pawns-container');
+            container.innerHTML = '';
+            container.className = "flex flex-wrap gap-1.5 justify-end";
+            for (let pId = 1; pId <= 12; pId++) {
+                const p = gameState.players[pId];
+                const info = GROUP_COLORS[pId];
+                const pBadge = document.createElement('span');
+                pBadge.className = `pawn-token text-[11px] px-2 py-0.5 text-white font-bold rounded-full shadow ${info.bg} ${pId === gameState.currentPlayer ? 'ring-2 ring-amber-950 scale-105 font-black' : 'opacity-70'}`;
+                pBadge.innerText = `${info.icon} R${Math.min(p.round, 5)}`;
+                container.appendChild(pBadge);
+            }
+        }
+
+        function updateWinRateStat() {
+            const playerData = gameState.players[gameState.currentPlayer];
+            if (playerData.history.length === 0) {
+                document.getElementById('win-rate-stat').innerText = '0%';
+                document.getElementById('win-rate-bar').style.width = '0%';
+                return;
+            }
+            const wins = playerData.history.filter(h => h.isWin).length;
+            const rate = Math.round((wins / playerData.history.length) * 100);
+            document.getElementById('win-rate-stat').innerText = `${rate}% (${wins}/${playerData.history.length} ครั้ง)`;
+            document.getElementById('win-rate-bar').style.width = `${rate}%`;
+        }
+
+        function renderWorksheetTable() {
+            const playerData = gameState.players[gameState.currentPlayer];
+            const tbody = document.getElementById('worksheet-table-body');
+            tbody.innerHTML = '';
+
+            if (playerData.history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-3 py-6 text-center text-gray-400 italic font-medium">
+                            ยังไม่มีข้อมูล ให้เลือกบัตรและทอยลูกเต๋าเพื่อบันทึกผล
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            playerData.history.forEach((row) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-amber-100 hover:bg-amber-50/50 transition font-medium';
+
+                const changeClass = row.scoreChange > 0 ? 'text-emerald-700 font-extrabold' : 'text-rose-600 font-extrabold';
+                const changeTxt = row.scoreChange > 0 ? `+${row.scoreChange}` : `${row.scoreChange}`;
+
+                tr.innerHTML = `
+                    <td class="px-2 py-2 text-center font-bold text-gray-600">${row.round}</td>
+                    <td class="px-2 py-2 font-bold">บัตร ${row.cardKey}</td>
+                    <td class="px-2 py-2 text-center text-gray-600">${row.probStr}</td>
+                    <td class="px-2 py-2 text-center"><span class="px-2 py-0.5 bg-gray-100 font-extrabold rounded border">${row.diceResult}</span></td>
+                    <td class="px-2 py-2 text-center ${changeClass}">${changeTxt}</td>
+                    <td class="px-2 py-2 text-center font-black text-amber-950">${row.totalScore}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openPodiumModal() {
+            const allGroupIds = Array.from({length: 12}, (_, i) => i + 1);
+            const sorted = allGroupIds.map(id => ({
+                id: id,
+                name: GROUP_COLORS[id].name,
+                icon: GROUP_COLORS[id].icon,
+                score: gameState.players[id].score
+            })).sort((a, b) => b.score - a.score);
+
+            const barsContainer = document.getElementById('podium-bars-container');
+            barsContainer.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-bold">${sorted[1].icon} ${sorted[1].score}🪙</span>
+                    <div class="w-16 bg-blue-400 rounded-t-xl flex items-center justify-center font-bold text-white text-sm" style="height: 70%;">2</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-black text-amber-600 animate-bounce">👑 ${sorted[0].icon} ${sorted[0].score}🪙</span>
+                    <div class="w-20 bg-amber-500 rounded-t-xl flex items-center justify-center font-black text-white text-base shadow-lg" style="height: 100%;">1</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-bold">${sorted[2].icon} ${sorted[2].score}🪙</span>
+                    <div class="w-16 bg-amber-700 rounded-t-xl flex items-center justify-center font-bold text-white text-sm" style="height: 50%;">3</div>
+                </div>
+            `;
+
+            const list = document.getElementById('podium-list');
+            list.innerHTML = sorted.map((item, index) => `
+                <div class="flex justify-between items-center p-2 bg-amber-50/60 rounded-xl border border-amber-200">
+                    <span class="font-bold">${index + 1}. ${item.icon} ${item.name}</span>
+                    <span class="font-black text-amber-900">${item.score} เหรียญ</span>
+                </div>
+            `).join('');
+
+            document.getElementById('podium-modal').classList.remove('hidden');
+        }
+
+        function togglePodiumModal() {
+            document.getElementById('podium-modal').classList.toggle('hidden');
+        }
+
+        function clearWorksheet() {
+            showConfirm('ยืนยันการล้างข้อมูล', 'คุณต้องการล้างข้อมูลบันทึกของกลุ่มนี้หรือไม่?', function() {
+                gameState.players[gameState.currentPlayer] = { score: 10, round: 1, history: [], usedQuizIds: [], quizCountInRound: 0 };
+                gameState.selectedCardKey = null;
+                updatePlayerUI();
+                renderWorksheetTable();
+            });
+        }
+
+        function resetCurrentGame() {
+            showConfirm('ยืนยันการเริ่มใหม่', 'คุณต้องการรีเซ็ตเกมของทุกกลุ่มกลับสู่ค่าเริ่มต้นใช่หรือไม่?', function() {
+                gameState.players = createInitialPlayers();
+                gameState.selectedCardKey = null;
+                resetTimer();
+                updatePlayerUI();
+                renderWorksheetTable();
+            });
+        }
+
+        function exportWorksheet() {
+            openDigitalWorksheetModal();
+        }
+
+        function openDigitalWorksheetModal() {
+            const select = document.getElementById('worksheet-group-select');
+            if (select) {
+                select.value = gameState.currentPlayer;
+            }
+            renderDigitalWorksheet(gameState.currentPlayer);
+            document.getElementById('digital-worksheet-modal').classList.remove('hidden');
+        }
+
+        function toggleDigitalWorksheetModal() {
+            document.getElementById('digital-worksheet-modal').classList.toggle('hidden');
+        }
+
+        function renderDigitalWorksheet(groupId) {
+            const gId = parseInt(groupId);
+            const player = gameState.players[gId];
+            const gInfo = GROUP_COLORS[gId];
+            const paper = document.getElementById('digital-sheet-paper');
+            if (!paper) return;
+
+            const wins = player.history.filter(h => h.isWin).length;
+            const totalPlayed = player.history.length;
+            const winRate = totalPlayed > 0 ? Math.round((wins / totalPlayed) * 100) : 0;
+
+            let tableRowsHtml = '';
+            for (let r = 1; r <= 5; r++) {
+                const h = player.history[r - 1];
+                if (h) {
+                    const card = CARDS_DATA[h.cardKey];
+                    const changeClass = h.scoreChange > 0 ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold';
+                    const changeTxt = h.scoreChange > 0 ? `+${h.scoreChange}` : `${h.scoreChange}`;
+                    tableRowsHtml += `
+                        <tr class="border-b border-amber-200/80 bg-white/80">
+                            <td class="py-2 px-2 text-center font-bold text-amber-900">${r}</td>
+                            <td class="py-2 px-2 font-bold">${card.title} (${h.cardKey})</td>
+                            <td class="py-2 px-2 text-center font-mono">${h.probStr}</td>
+                            <td class="py-2 px-2 text-center font-black">${h.diceResult}</td>
+                            <td class="py-2 px-2 text-center ${changeClass}">${changeTxt}</td>
+                            <td class="py-2 px-2 text-center font-black text-amber-950">${h.totalScore}</td>
+                        </tr>
+                    `;
+                } else {
+                    tableRowsHtml += `
+                        <tr class="border-b border-amber-200/50 bg-white/40 italic text-gray-400">
+                            <td class="py-2 px-2 text-center">${r}</td>
+                            <td class="py-2 px-2" colspan="5">ยังไม่ได้ดำเนินการเล่นในรอบนี้</td>
+                        </tr>
+                    `;
+                }
+            }
+
+            paper.innerHTML = `
+                <div class="border-b-2 border-amber-300 pb-3 flex justify-between items-center">
+                    <div>
+                        <h4 class="text-base font-black text-amber-950 flex items-center gap-2">
+                            <span>🎲 ใบบันทึกผลกิจกรรม: นักเสี่ยงโชค พิชิตความน่าจะเป็น</span>
+                        </h4>
+                        <p class="text-[11px] text-amber-800 font-medium">ระดับชั้นมัธยมศึกษา | กลุ่มสาระการเรียนรู้คณิตศาสตร์</p>
+                    </div>
+                    <div class="px-3 py-1 rounded-xl bg-white border-2 border-amber-300 font-black text-xs text-amber-950 shadow-sm">
+                        ${gInfo.icon} ${gInfo.name}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                    <div class="bg-white p-2 rounded-xl border border-amber-200">
+                        <span class="text-gray-500 font-medium block">ทุนเริ่มต้น:</span>
+                        <span class="font-extrabold text-amber-900 text-xs">10 เหรียญ</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-amber-200">
+                        <span class="text-gray-500 font-medium block">รอบที่เล่นจบ:</span>
+                        <span class="font-extrabold text-amber-900 text-xs">${Math.min(player.round - 1, 5)} / 5 รอบ</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-amber-200">
+                        <span class="text-gray-500 font-medium block">อัตราทอยสำเร็จ:</span>
+                        <span class="font-extrabold text-emerald-700 text-xs">${winRate}% (${wins}/${totalPlayed})</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-amber-200">
+                        <span class="text-gray-500 font-medium block">คะแนนเหรียญสุทธิ:</span>
+                        <span class="font-black text-amber-950 text-sm">${player.score} เหรียญ</span>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-hidden border-2 border-amber-300 rounded-xl bg-white shadow-sm">
+                    <table class="w-full text-[11px] text-left">
+                        <thead class="bg-amber-100 text-amber-950 uppercase font-black border-b border-amber-300">
+                            <tr>
+                                <th class="py-2 px-2 text-center">รอบ</th>
+                                <th class="py-2 px-2">เหตุการณ์ที่เลือก</th>
+                                <th class="py-2 px-2 text-center">P(E)</th>
+                                <th class="py-2 px-2 text-center">ผลทอย</th>
+                                <th class="py-2 px-2 text-center">ได้/เสีย</th>
+                                <th class="py-2 px-2 text-center">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-amber-200 space-y-1 text-[11px]">
+                    <div class="font-bold text-amber-950">💡 สรุปข้อคิดทางคณิตศาสตร์จากกิจกรรม:</div>
+                    <p class="text-gray-700 leading-relaxed">
+                        • ความน่าจะเป็น P(E) = n(E)/n(S) ใช้ประเมินโอกาสเกิดเหตุการณ์เพื่อวางแผนตัดสินใจ<br>
+                        • บัตรที่ให้รางวัลสูงจะมีความน่าจะเป็นต่ำ (เสี่ยงสูง) ส่วนบัตรที่ให้รางวัลน้อยจะมีความน่าจะเป็นสูง (เสี่ยงต่ำ)
+                    </p>
+                </div>
+            `;
+        }
+
+        function toggleRulesModal() {
+            document.getElementById('rules-modal').classList.toggle('hidden');
+        }
+
+        function toggleDebriefingModal() {
+            document.getElementById('debrief-modal').classList.toggle('hidden');
+        }
+
+        window.onload = function() {
+            updatePlayerUI();
+            renderWorksheetTable();
+            updateTimerDisplay();
+        };
+    </script>
+</body>
+</html>
